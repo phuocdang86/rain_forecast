@@ -1,0 +1,48 @@
+- name: Create Compute Engine instances for App
+  hosts: localhost
+  tasks:
+  - name: Jenkins Instance
+    gcp_compute_instance:
+      name: instance-3
+      machine_type: e2-micro
+      zone: australia-southeast1-a
+      project: rainforecast
+      auth_kind: serviceaccount
+      service_account_file: ../secrets/gc_secrets_file.json
+      disks:
+        - auto_delete: true
+          boot: true
+          initialize_params:
+            source_image: projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20230727
+      network_interfaces:
+        - network:
+            selfLink: global/networks/default
+          access_configs:
+          - name: External NAT
+            type: ONE_TO_ONE_NAT
+      state: present
+
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: phuocdang
+      state: present
+      key: "{{ lookup('file', '/Users/phuocdang/.ssh/id_ed25519.pub') }}"   
+
+  - name: Create inbound firewall rule for port 8081 and 50000
+    gcp_compute_firewall:
+      name: allow-port-8081-50000
+      network:
+        selfLink: global/networks/default
+      allowed:
+        - ip_protocol: TCP
+          ports:
+            - '50000'
+            - '8081'
+      source_ranges:
+        - 0.0.0.0/0  
+      direction: INGRESS
+      description: Allow incoming traffic on port 8081 and 50000
+      project: rainforecast
+      auth_kind: serviceaccount
+      service_account_file: ../secrets/gc_secrets_file.json
+      state: present

@@ -1,0 +1,64 @@
+- name: Create Compute Engine instances for App
+  hosts: localhost
+  tasks:
+  - name: First Instance
+    gcp_compute_instance:
+      name: instance-1
+      machine_type: e2-micro
+      zone: australia-southeast1-a
+      project: rainforecast
+      auth_kind: serviceaccount
+      service_account_file: ../secrets/gc_secrets_file.json
+      disks:
+        - auto_delete: true
+          boot: true
+          initialize_params:
+            source_image: projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20230727
+      network_interfaces:
+        - network:
+            selfLink: global/networks/default
+          access_configs:
+          - name: External NAT
+            type: ONE_TO_ONE_NAT
+      metadata:
+          ssh-keys: "root:{{ lookup('file',  'id_ed25519') }}"
+      state: present
+
+  - name: Second Instance
+    gcp_compute_instance:
+      name: instance-2
+      machine_type: e2-micro
+      zone: australia-southeast1-a
+      project: rainforecast
+      auth_kind: serviceaccount
+      service_account_file: ../secrets/gc_secrets_file.json
+      disks:
+        - auto_delete: true
+          boot: true
+          initialize_params:
+            source_image: projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20230727
+      network_interfaces:
+        - network:
+            selfLink: global/networks/default
+          access_configs:
+          - name: External NAT
+            type: ONE_TO_ONE_NAT      
+      state: present
+
+  - name: Create inbound firewall rule for port 30000
+    gcp_compute_firewall:
+      name: allow-port-30000
+      network:
+        selfLink: global/networks/default
+      allowed:
+        - ip_protocol: TCP
+          ports:
+            - '30000'
+      source_ranges:
+        - 0.0.0.0/0  # Allow traffic from any source (use a more specific source range for security)
+      direction: INGRESS
+      description: Allow incoming traffic on port 30000
+      project: rainforecast
+      auth_kind: serviceaccount
+      service_account_file: ../secrets/gc_secrets_file.json
+      state: present
