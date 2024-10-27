@@ -110,18 +110,79 @@ docker logs jenkins
 
 ![Jenkins Demo](images/Jenkins_demo.png)
 
+### 4. Monitoring System:
+#### 4.1 Traces and Logs
+In my monitoring system, **Jaeger** is used for distributed tracing to track the flow of requests across services, helping identify bottlenecks and performance issues. **Prometheus** collects and stores time-series metrics, enabling performance monitoring and alerting based on resource usage or service metrics. **Grafana** provides real-time dashboards that integrate both metrics from Prometheus and traces from Jaeger, offering a unified view of system performance and aiding in troubleshooting and optimization. Together, these tools ensure effective monitoring of your applications.
+
+```
+cd monitoring_systems
+ansible-playbook prom_graf_docker.yml
+```
+
+- Jaeger running at port 16686, Prometheus at 9090 and Grafana at 3001.
+- To get logs:
+```
+cd instrument/traces
+python trace_automatic.py
+```
+- The app is running at port 8089. Execute some predictions, you'll see some logs in Jaeger:
+![Jaeger logs](images/Jaeger.png)
+
+#### 4.2 Prometheus Metrics
+- I have created some simple metrics such as request counter and service response time. Prometheus metrics is running at port 8099, for visualization go to port 9090. I also generated a client file to repeatedly send request to the app.
+
+```
+cd instrument/metrics
+python metrics.py
+python client.py
+```
+- Prometheus metrics:
+
+![Prometheus Metrics](images/prometheus_metrics.png)
+
+- Prometheus visualization:
+
+![Prometheus Visualization](images/prometheus_histogram.png)
+![Prometheus Visualization](images/prometheus_service_counter.png)
+
+#### 4.3 Grafana Dashboard:
+- You can build your own dashboard using the metrics scraped from Prometheus or use Grafana built-in dashboard such as Cadvisor exporter (monitoring containers) or Node exporter (observing nodes)
+![Grafana](images/Grafana.png)
+![Grafana](images/Grafana_2.png)
+
 ### 5. Google Kubernetes Engine:
-#### 5.1 GKE + Jenkins
+- Change Kubernetes Engine to Standard Mode, then create a cluster
+![GKE](images/GKE_1.png)
+![GKE](images/GKE_2.png)
+
+- Authenticate and configure kubectl to interact with a Google Kubernetes Engine 
 ```
-cd GKE_Jenkins
-ansible-playbook create_Jenkins_instance.yml
+gcloud container clusters get-credentials rain-prediction-cluster --zone australia-southeast1-a --project rainforecast
 ```
 
-- Copy ip address and paste into inventory file then
+- Check generated nodes:
+
+![GKE](images/GKE_3.png)
 
 ```
-ansible-playbook -i ../inventory install_Jenkins.yml
+kubectl create ns nginx-ingress
+kubens nginx-ingress
+helm upgrade --install nginx-ingress-controller ./GKE/nginx-ingress
+
 ```
+- Install Prometheus and Grafana:
+
+```
+kubectl create -f ./monitoring_GKE/monitoring/prometheus/kubernetes/1.23/manifests/setup/
+kubectl create -f ./monitoring_GKE/monitoring/prometheus/kubernetes/1.23/manifests/
+kubectl apply -n monitoring -f ./monitoring_GKE/service_monitor/prometheus.yaml
+
+kubens default
+kubectl apply -f ./monitoring_GKE/service_monitor/servicemonitor.yaml
+helm upgrade --install rain-prediction-api ./GKE/service_ingress
+
+
+
 
 
 

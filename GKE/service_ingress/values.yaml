@@ -1,0 +1,4 @@
+image:
+  repository: joshphuocdang/metrics
+  tag: "latest"
+  pullPolicy: Always

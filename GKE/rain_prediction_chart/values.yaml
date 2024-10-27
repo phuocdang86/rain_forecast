@@ -1,0 +1,10 @@
+replicaCount:
+  number: "2"
+
+image:
+  repository: joshphuocdang/rain_prediction_app
+  tag: "latest"
+  pullPolicy: Always
+
+env:
+  name: dev

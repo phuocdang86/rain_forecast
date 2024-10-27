@@ -1,0 +1,4 @@
+image:
+  repository: joshphuocdang/rain_prediction_app
+  tag: "latest"
+  pullPolicy: Always

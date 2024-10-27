@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from loguru import logger
 from pydantic import BaseModel
-from date_transformer import DateCyclicalTransformer
+from Notebooks.date_transformer import DateCyclicalTransformer
 
 app = FastAPI()
 
